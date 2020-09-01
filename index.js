@@ -14,6 +14,7 @@ for (let i = 0; i < symbols.length; i++) {
     switch (symbolsContent[i].textContent) {
       case "C":
         console.log("It is reset button");
+        isEqualClicked, (isReseted = false);
         displayTextArr.length = 0;
         display.textContent = 0;
         ansDisplay.textContent = "";
@@ -47,17 +48,29 @@ for (let i = 0; i < symbols.length; i++) {
             isEqualClicked = false;
           }
           //if user click any number button, after showing the 1st ans, all will reset
-          if(isReseted){
+          if (isReseted) {
             beforeValue = 0;
             iseReseted = false;
           }
+
           displayTextArr.push(symbolsContent[i].textContent);
+          //"%" after can have +/-/*/"/"
+          if (displayTextArr[displayTextArr.length - 1] === "%") {
+            display.textContent = showArrText(displayTextArr);
+          }
         }
         ansDisplay.textContent = "";
         break;
       case ".":
-      case "%":
         if (checkIfConsectiveSymbol(displayTextArr)) {
+          return;
+        } else {
+          displayTextArr.push(symbolsContent[i].textContent);
+          display.textContent = showArrText(displayTextArr);
+        }
+        break;
+      case "%":
+        if (displayTextArr[displayTextArr.length - 1] === "%") {
           return;
         } else {
           displayTextArr.push(symbolsContent[i].textContent);
@@ -105,7 +118,6 @@ function checkIfConsectiveSymbol(arr) {
   // only for the consective symbol
   // if same symbol, will not push into the arr
   if (
-    arr[arr.length - 1] === "%" ||
     arr[arr.length - 1] === "/" ||
     arr[arr.length - 1] === "*" ||
     arr[arr.length - 1] === "-" ||
@@ -128,39 +140,10 @@ function outputArrText(arr) {
   for (let i = 0; i < arr.length; i++) {
     str += arr[i];
   }
+  
 
-  function convertToNumOrSymbol(arr) {
-    let newArr = [];
-    let numStr = "";
-
-    // ["2","3","+","3","5","-","3","5"] -> [23, "+", 35, "-", 35]
-    arr.map((item, index) => {
-      if (!isNaN(parseFloat(item)) || item === ".") {
-        numStr += item;
-      } else {
-        // 1. when i = index of symbol, push the saved numStr intro arr
-        // 2. empty the numStr
-        // 3. push the symbol into arr
-        newArr.push(parseFloat(numStr)); //push the "2.5" into newArr
-        numStr = "";
-        newArr.push(item); //push "+" into newArr
-      }
-      // need to push the last numStr to arr
-      if (index === arr.length - 1) {
-        console.log("Execute this?");
-        newArr.push(parseFloat(numStr));
-      }
-
-      console.log(numStr);
-    });
-    //[2.5, "+", 3]
-    return newArr;
-  }
-
-  let newArr = convertToNumOrSymbol(arr);
-  console.log(newArr);
-
-  multipleOrDivideFirst(newArr, "*", "/");
+  let convertedArr = convertToNumOrSymbol(arr);
+  console.log(`convertedArr = ${convertedArr}`);
 
   function multipleOrDivideFirst(originalArr, multipleSymbol, divideSymbol) {
     // 先乘除後
@@ -215,27 +198,42 @@ function outputArrText(arr) {
     }
     return originalArr;
   }
+
+  //[3,"+",5,"*",2,"-","3","/",3] -> return [3, "+", 10, "-", 2, "-", 1]
+  let finalArr = multipleOrDivideFirst(convertedArr, "*", "/");
+  console.log(`finalArr = ${finalArr}`);
+
+  // function finalEasyCompile(finalArr, accum){
+
+  // }
+
+  // finalEasyCompile(finalArr)
+
   // Compile the result
   // newArr = [32, "+", 64, "-", 50]
   // 1. accum = 96
   // 2. accum = 96-50 = 46
-  let accum = newArr[0];
-  while (i < newArr.length) {
-    let item = newArr[i];
+  let accum = finalArr[0];
+  while (i < finalArr.length) {
+    let item = finalArr[i];
     // 1. if is symbol (solved)
     // 2. only can solve 個位數, 雙位, 三位數 (solved)
     // 3. 先乘除後加減 (未solve)
+    console.log(`before accum = ${accum}, i = ${i}`);
     if (isNaN(item)) {
+      // for "%", [10, "%", "+", 50] -> [0.1, "+", 50]
+      accum = checkSymbolType(item, accum, finalArr[i + 1]);
+      console.log(`When item is not "%", accum = ${accum}`);
       console.log(`run when i = ${i}`);
-      accum = checkSymbolType(item, accum, newArr[i + 1]);
     }
-    console.log(accum, i);
+    console.log(`accum = ${accum}, i = ${i}`);
     i++;
   }
   console.log(accum);
   displayAns(accum);
-  console.log(`str = ${str}`);
   beforeValue = accum;
+
+  console.log(`str = ${str}`);
   console.log(`beforeValue = ${beforeValue}`);
   isEqualClicked = true;
   // console.log(`symbolIndexInStr = ${symbolIndexInStr}`);
@@ -260,5 +258,54 @@ function checkSymbolType(symbol, prev, next) {
     case "/":
       return prev / next;
       break;
+    case "%":
+      return prev / 100;
+      break;
   }
+}
+
+function convertToNumOrSymbol(arr) {
+  let newArr = [];
+  let numStr = "";
+
+  // ["2","3","+","3","5","-","3","5"] -> [23, "+", 35, "-", 35]
+  arr.map((item, index) => {
+    // if item = number or "." or "%", combine to numStr
+    if (!isNaN(parseFloat(item)) || item === "." || item === "%") {
+      numStr += item;
+      console.log(`each numStr = ${numStr}, index = ${index}`)
+    } else {
+      // 1. when i = index of symbol, push the saved numStr intro arr
+      // 2. empty the numStr
+      // 3. push the symbol into arr
+      
+      //if have "%" inside the string
+      // **below code will convert "3%" to "3" -> should be "3%" -> "0.03"
+      if(numStr.indexOf("%") !== -1){
+        console.log(`numStr to /100 ready = ${numStr}`)
+        let percentageIndex = numStr.indexOf("%");
+        console.log(`percentageIndex = ${percentageIndex}`);
+        //get the number before "%" symbol
+        // if "5%" -> return "5"
+        let numStrBeforePercentageSymbol = numStr.substring(0, percentageIndex);
+        console.log(`numStrBeforePercentageSymbol = ${numStrBeforePercentageSymbol}`);
+        let numStrDiv100 = "" + parseFloat(numStrBeforePercentageSymbol) / 100;
+        console.log(`numStrDiv100 = ${numStrDiv100}`);
+        numStr = numStrDiv100;
+        console.log(`step to percentage 100, numStr = ${numStr}`);
+      }
+      newArr.push(parseFloat(numStr)); //push the "2.5" into newArr
+      numStr = "";
+      newArr.push(item); //push "+" into newArr
+    }
+    // need to push the last numStr to arr
+    if (index === arr.length - 1) {
+      console.log("Execute this?");
+      newArr.push(parseFloat(numStr));
+    }
+
+    console.log(numStr);
+  });
+  //[2.5, "+", 3]
+  return newArr;
 }
