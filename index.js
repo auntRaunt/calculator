@@ -7,6 +7,10 @@ let displayTextArr = [];
 let beforeValue = 0;
 let isEqualClicked = false;
 let isReseted = false;
+Number.prototype.countDecimals = function () {
+  if (Math.floor(this.valueOf()) === this.valueOf()) return 0;
+  return this.toString().split(".")[1].length || 0;
+};
 
 // Everything start from clicking the button
 for (let i = 0; i < symbols.length; i++) {
@@ -14,7 +18,8 @@ for (let i = 0; i < symbols.length; i++) {
     switch (symbolsContent[i].textContent) {
       case "C":
         console.log("It is reset button");
-        isEqualClicked, (isReseted = false);
+        isEqualClicked = false;
+        isReseted = false;
         displayTextArr.length = 0;
         display.textContent = 0;
         ansDisplay.textContent = "";
@@ -87,6 +92,9 @@ for (let i = 0; i < symbols.length; i++) {
       case "7":
       case "8":
       case "9":
+        if (displayTextArr[displayTextArr.length - 1] === "%") {
+          displayTextArr.push("*");
+        }
         displayTextArr.push(symbolsContent[i].textContent);
         display.textContent = showArrText(displayTextArr);
         //after clicked equal button, then click any number digit, will reset
@@ -140,7 +148,6 @@ function outputArrText(arr) {
   for (let i = 0; i < arr.length; i++) {
     str += arr[i];
   }
-  
 
   let convertedArr = convertToNumOrSymbol(arr);
   console.log(`convertedArr = ${convertedArr}`);
@@ -229,6 +236,10 @@ function outputArrText(arr) {
     console.log(`accum = ${accum}, i = ${i}`);
     i++;
   }
+  if (accum.countDecimals() >= 5) {
+    console.log("hi?");
+    accum.toFixed(5);
+  }
   console.log(accum);
   displayAns(accum);
   beforeValue = accum;
@@ -269,31 +280,35 @@ function convertToNumOrSymbol(arr) {
   let numStr = "";
 
   // ["2","3","+","3","5","-","3","5"] -> [23, "+", 35, "-", 35]
+  console.log(`before convert arr = ${arr}`);
   arr.map((item, index) => {
     // if item = number or "." or "%", combine to numStr
     if (!isNaN(parseFloat(item)) || item === "." || item === "%") {
       numStr += item;
-      console.log(`each numStr = ${numStr}, index = ${index}`)
-    } else {
-      // 1. when i = index of symbol, push the saved numStr intro arr
-      // 2. empty the numStr
-      // 3. push the symbol into arr
-      
-      //if have "%" inside the string
-      // **below code will convert "3%" to "3" -> should be "3%" -> "0.03"
-      if(numStr.indexOf("%") !== -1){
-        console.log(`numStr to /100 ready = ${numStr}`)
+      console.log(`each numStr = ${numStr}, index = ${index}`);
+      if (numStr.indexOf("%") !== -1) {
+        console.log(`numStr to /100 ready = ${numStr}`);
         let percentageIndex = numStr.indexOf("%");
         console.log(`percentageIndex = ${percentageIndex}`);
         //get the number before "%" symbol
         // if "5%" -> return "5"
         let numStrBeforePercentageSymbol = numStr.substring(0, percentageIndex);
-        console.log(`numStrBeforePercentageSymbol = ${numStrBeforePercentageSymbol}`);
+        console.log(
+          `numStrBeforePercentageSymbol = ${numStrBeforePercentageSymbol}`
+        );
         let numStrDiv100 = "" + parseFloat(numStrBeforePercentageSymbol) / 100;
         console.log(`numStrDiv100 = ${numStrDiv100}`);
         numStr = numStrDiv100;
         console.log(`step to percentage 100, numStr = ${numStr}`);
       }
+    } else {
+      // 1. when i = index of symbol, push the saved numStr intro arr
+      // 2. empty the numStr
+      // 3. push the symbol into arr
+
+      //if have "%" inside the string
+      // **below code will convert "3%" to "3" -> should be "3%" -> "0.03"
+
       newArr.push(parseFloat(numStr)); //push the "2.5" into newArr
       numStr = "";
       newArr.push(item); //push "+" into newArr
@@ -309,3 +324,4 @@ function convertToNumOrSymbol(arr) {
   //[2.5, "+", 3]
   return newArr;
 }
+
