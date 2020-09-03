@@ -13,6 +13,11 @@ Number.prototype.countDecimals = function () {
 };
 
 // Everything start from clicking the button
+// for (let i = 0; i < symbols.length; i++) {
+//   symbols[i].addEventListener("click", init(symbolsContent[i].textContent));
+//   console.log(displayTextArr, i);
+// }
+
 for (let i = 0; i < symbols.length; i++) {
   symbols[i].addEventListener("click", () => {
     switch (symbolsContent[i].textContent) {
@@ -55,7 +60,7 @@ for (let i = 0; i < symbols.length; i++) {
           //if user click any number button, after showing the 1st ans, all will reset
           if (isReseted) {
             beforeValue = 0;
-            iseReseted = false;
+            isReseted = false;
           }
 
           displayTextArr.push(symbolsContent[i].textContent);
@@ -66,8 +71,13 @@ for (let i = 0; i < symbols.length; i++) {
         }
         ansDisplay.textContent = "";
         break;
+      // need to solve "5.5.5" issue
       case ".":
-        if (checkIfConsectiveSymbol(displayTextArr)) {
+        if (
+          //have problem, will return true
+          checkIfConsectiveSymbol(displayTextArr) ||
+          checkIfSameDotsInOneNumber(displayTextArr)
+        ) {
           return;
         } else {
           displayTextArr.push(symbolsContent[i].textContent);
@@ -75,9 +85,19 @@ for (let i = 0; i < symbols.length; i++) {
         }
         break;
       case "%":
-        if (displayTextArr[displayTextArr.length - 1] === "%") {
+        if (
+          displayTextArr[displayTextArr.length - 1] === "%" ||
+          displayTextArr[displayTextArr.length - 1] === "."
+        ) {
           return;
         } else {
+          // if user want to continue compile, use the previous value display, and push into displayTextArr
+          // use previous total value to display
+          if (isEqualClicked) {
+            displayTextArr = [beforeValue];
+            beforeValue = 0;
+            isEqualClicked = false;
+          }
           displayTextArr.push(symbolsContent[i].textContent);
           display.textContent = showArrText(displayTextArr);
         }
@@ -113,10 +133,117 @@ for (let i = 0; i < symbols.length; i++) {
   });
 }
 
+// function init(eachLetter) {
+//   switch (eachLetter) {
+//     case "C":
+//       console.log("It is reset button");
+//       isEqualClicked = false;
+//       isReseted = false;
+//       displayTextArr.length = 0;
+//       display.textContent = 0;
+//       ansDisplay.textContent = "";
+//       beforeValue = 0;
+//       console.log(displayTextArr);
+//       break;
+//     case "=":
+//       console.log("It is equal button");
+//       console.log(displayTextArr);
+//       //1. when user click = button, will compile all the letter inside displayTextArr at that moment
+//       // if click the = button, the last index in arr is symbol, will not compile
+//       if (checkIfConsectiveSymbol(displayTextArr)) {
+//         return;
+//       } else {
+//         outputArrText(displayTextArr);
+//       }
+//       break;
+//     case "/":
+//     case "*":
+//     case "-":
+//     case "+":
+//       //if consective input 2 symbol, will not function
+//       if (checkIfConsectiveSymbol(displayTextArr)) {
+//         return;
+//       } else {
+//         // if user want to continue compile, use the previous value display, and push into displayTextArr
+//         // use previous total value to display
+//         if (isEqualClicked) {
+//           displayTextArr = [beforeValue];
+//           beforeValue = 0;
+//           isEqualClicked = false;
+//         }
+//         //if user click any number button, after showing the 1st ans, all will reset
+//         if (isReseted) {
+//           beforeValue = 0;
+//           iseReseted = false;
+//         }
+
+//         displayTextArr.push(eachLetter);
+//         //"%" after can have +/-/*/"/"
+//         if (displayTextArr[displayTextArr.length - 1] === "%") {
+//           display.textContent = showArrText(displayTextArr);
+//         }
+//       }
+//       ansDisplay.textContent = "";
+//       break;
+//     case ".":
+//       if (checkIfConsectiveSymbol(displayTextArr)) {
+//         return;
+//       } else {
+//         displayTextArr.push(eachLetter);
+//         display.textContent = showArrText(displayTextArr);
+//       }
+//       break;
+//     case "%":
+//       if (displayTextArr[displayTextArr.length - 1] === "%") {
+//         return;
+//       } else {
+//         displayTextArr.push(eachLetter);
+//         display.textContent = showArrText(displayTextArr);
+//       }
+//       break;
+//     case "0":
+//     case "1":
+//     case "2":
+//     case "3":
+//     case "4":
+//     case "5":
+//     case "6":
+//     case "7":
+//     case "8":
+//     case "9":
+//       if (displayTextArr[displayTextArr.length - 1] === "%") {
+//         displayTextArr.push("*");
+//       }
+//       displayTextArr.push(eachLetter);
+//       display.textContent = showArrText(displayTextArr);
+//       //after clicked equal button, then click any number digit, will reset
+//       if (ansDisplay.textContent === "Ans") {
+//         isReseted = true;
+//         isEqualClicked = false;
+//         displayTextArr.length = 0;
+//         ansDisplay.textContent = "";
+//         displayTextArr.push(eachLetter);
+//         display.textContent = showArrText(displayTextArr);
+//       }
+//       break;
+//   }
+// }
+
 function showArrText(arr) {
   let text = "";
   for (let i = 0; i < arr.length; i++) {
     text += arr[i];
+    if (arr.length > 11) {
+      //stop to push any symbol into arr, or stop eventlistner of each button
+      // for (let i = 0; i < symbols.length; i++) {
+      //   symbols[i].removeEventListener("click", init);
+      // }
+    } else if (arr.length > 9) {
+      //font size of displayAns will become smaller
+      display.style.fontSize = "1.5em";
+    } else {
+      display.style.fontSize = "2em";
+    }
   }
   return text;
 }
@@ -325,3 +452,17 @@ function convertToNumOrSymbol(arr) {
   return newArr;
 }
 
+function checkIfSameDotsInOneNumber(arr) {
+  // can not "5.5.5";
+  //false case
+  // 從後到前, 第一個symbol如果係"." 就唔得, 
+  for(let i=arr.length-1; i>=0; i--){
+    if(isNaN(parseFloat(arr[i]))){
+      if(arr[i] === "."){
+        return true;
+      }else{
+        return false;
+      }
+    }
+  }
+}
